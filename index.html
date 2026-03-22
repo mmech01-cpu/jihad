@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0a">
+<title>Recovery Plan</title>
+<style>
+:root{
+  --green:#1D9E75;--green-dark:#0F6E56;--green-glow:rgba(29,158,117,.2);
+  --bg:#0c0c0c;--bg2:#161616;--bg3:#1f1f1f;--bg4:#2a2a2a;
+  --border:#222;--border2:#2e2e2e;--border3:#3a3a3a;
+  --text:#f0f0f0;--text2:#999;--text3:#555;
+  --spirit:#9b8ef5;--body-c:#1D9E75;--fuel:#e8a13a;--mind:#5ba3e0;
+  --r:14px;--rsm:10px;--rxs:7px;
+  --sidebar:240px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{display:flex;overflow:hidden}
+
+/* ── SIDEBAR (desktop) ── */
+.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;position:relative;z-index:10}
+.sidebar-logo{padding:24px 20px 16px;border-bottom:1px solid var(--border)}
+.logo-mark{width:32px;height:32px;border-radius:10px;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:10px}
+.logo-name{font-size:13px;font-weight:700;color:var(--text);letter-spacing:.01em}
+.logo-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.sync-row{display:flex;align-items:center;gap:6px;margin-top:8px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--text3)}
+.sync-dot.synced{background:var(--green)}
+.sync-dot.syncing{background:#e8a13a;animation:pulse 1s infinite}
+.sync-label{font-size:10px;color:var(--text3)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+.nav{padding:12px 10px;flex:1;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--rsm);cursor:pointer;transition:background .15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--bg3)}
+.nav-item.active{background:rgba(29,158,117,.12)}
+.nav-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.nav-text{font-size:13px;font-weight:500;color:var(--text2)}
+.nav-item.active .nav-text{color:var(--green);font-weight:600}
+.nav-score{margin-left:auto;font-size:10px;font-weight:700;color:var(--text3)}
+.nav-item.active .nav-score{color:var(--green)}
+
+.sidebar-footer{padding:14px;border-top:1px solid var(--border)}
+.week-ctrl{display:flex;align-items:center;gap:8px}
+.wk-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--border3);background:var(--bg3);color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s;flex-shrink:0}
+.wk-btn:active{background:var(--bg4)}
+.wk-info{flex:1;text-align:center}
+.wk-label{font-size:12px;font-weight:600;color:var(--text)}
+.wk-dates{font-size:9px;color:var(--text3);margin-top:1px}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{padding:20px 28px 0;flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.page-title{font-size:22px;font-weight:700;color:var(--text);line-height:1.2}
+.page-sub{font-size:12px;color:var(--text3);margin-top:3px}
+.score-widget{display:flex;align-items:center;gap:14px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 16px;flex-shrink:0}
+.score-big{font-size:28px;font-weight:700;line-height:1;color:var(--text)}
+.score-of{font-size:12px;color:var(--text3)}
+.score-right{min-width:140px}
+.score-lbl{font-size:9px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:6px}
+.prog-track{height:4px;background:var(--bg4);border-radius:2px;overflow:hidden;margin-bottom:6px}
+.prog-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--green-dark),var(--green));transition:width .5s cubic-bezier(.4,0,.2,1)}
+.pillar-bars{display:flex;gap:4px}
+.pb{flex:1;height:3px;border-radius:2px;background:var(--bg4);overflow:hidden}
+.pb-fill{height:100%;border-radius:2px;transition:width .4s ease}
+
+.scroll{flex:1;overflow-y:auto;padding:16px 28px 40px;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar{width:4px}
+.scroll::-webkit-scrollbar-track{background:transparent}
+.scroll::-webkit-scrollbar-thumb{background:var(--border3);border-radius:2px}
+
+/* ── GRID LAYOUT ── */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+/* ── CARDS ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:12px}
+.card-sm{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px}
+.card-head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.card-icon{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.card-title{font-size:13px;font-weight:700;color:var(--text)}
+.card-score{margin-left:auto;font-size:11px;font-weight:700;background:var(--bg3);padding:3px 9px;border-radius:20px;color:var(--text3)}
+.section-label{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;margin-top:4px}
+
+/* ── TRACKER TABLE ── */
+.tracker-wrap{overflow-x:auto}
+.tracker-table{width:100%;border-collapse:collapse;min-width:480px}
+.tracker-table th{font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);text-align:center;padding:6px 4px;width:38px}
+.tracker-table th.today-h{color:var(--green)}
+.tracker-table th.habit-h{text-align:left;width:auto;padding-left:0}
+.tracker-table td{padding:3px 4px;text-align:center}
+.tracker-table td.habit-td{text-align:left;padding-left:0;padding-right:12px}
+.habit-name-cell{font-size:12px;color:var(--text2);line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.cell{width:34px;height:34px;border-radius:var(--rxs);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;font-weight:700;transition:transform .1s,background .12s;background:var(--bg3);color:var(--text3)}
+.cell:active,.cell:focus{transform:scale(.85);outline:none}
+.cell.done{background:var(--green);border-color:var(--green-dark);color:#fff}
+.cell.skip{background:var(--bg3);opacity:.35;border-color:var(--border)}
+.cell.today-col{border-color:var(--green);border-width:1.5px}
+
+/* ── QUOTE ── */
+.quote-card{background:linear-gradient(135deg,#111827,#0d1f17);border:1px solid #1e3a2a;border-radius:var(--r);padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
+.quote-card::after{content:'';position:absolute;bottom:-30px;right:-30px;width:100px;height:100px;border-radius:50%;background:rgba(29,158,117,.05)}
+.qmark{font-size:48px;color:rgba(29,158,117,.2);line-height:.8;font-family:Georgia,serif;margin-bottom:6px}
+.qtext{font-size:15px;color:#c8e6d8;line-height:1.7;font-style:italic;margin-bottom:10px}
+.qsrc{font-size:11px;color:rgba(29,158,117,.6);font-weight:600;letter-spacing:.04em}
+.reflect-btn{margin-top:12px;display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--green);background:rgba(29,158,117,.1);border:none;border-radius:20px;padding:6px 12px;cursor:pointer;transition:background .15s}
+.reflect-btn:hover{background:rgba(29,158,117,.18)}
+
+/* ── JOURNAL ── */
+.day-chips{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
+.day-chip{padding:6px 13px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid var(--border2);background:var(--bg3);color:var(--text3);transition:all .15s;letter-spacing:.02em}
+.day-chip.active{background:var(--green);border-color:var(--green-dark);color:#fff}
+.field-group{margin-bottom:14px}
+.field-label{display:block;font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.07em;text-transform:uppercase;margin-bottom:7px}
+textarea{width:100%;border:1px solid var(--border2);border-radius:var(--rsm);padding:10px 12px;font-size:13px;color:var(--text);resize:none;font-family:inherit;background:var(--bg3);line-height:1.6;transition:border .15s}
+textarea::placeholder{color:var(--text3)}
+textarea:focus{outline:none;border-color:var(--green)}
+.missed-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px}
+.missed-item{display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--bg3);border-radius:var(--rxs);border:1px solid var(--border)}
+.missed-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.missed-label{font-size:11px;color:var(--text2);flex:1}
+.missed-note-btn{font-size:10px;font-weight:700;color:var(--green);background:rgba(29,158,117,.1);border:none;border-radius:20px;padding:4px 9px;cursor:pointer}
+
+/* ── REVIEW ── */
+.big-score{font-size:52px;font-weight:700;color:var(--green);line-height:1;margin-bottom:4px}
+.big-rating{font-size:13px;color:var(--text3);margin-bottom:18px}
+
+/* ── DRIVE ── */
+.drive-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border)}
+.drive-row:last-child{border-bottom:none}
+.drive-key{font-size:12px;color:var(--text2)}
+.drive-val{font-size:12px;font-weight:600;color:var(--text3)}
+.drive-val.on{color:var(--green)}
+.info-box{background:var(--bg3);border-radius:var(--rsm);padding:14px;font-size:12px;color:var(--text3);line-height:1.75;border:1px solid var(--border);margin-top:10px}
+.info-box strong{color:var(--text2)}
+
+/* ── BUTTONS ── */
+.btn-row{display:flex;gap:8px}
+.btn{flex:1;padding:12px 16px;border:none;border-radius:var(--rsm);font-size:13px;font-weight:700;cursor:pointer;transition:transform .1s,opacity .15s;letter-spacing:.02em}
+.btn:active{transform:scale(.97);opacity:.85}
+.btn-primary{background:var(--green);color:#fff}
+.btn-secondary{background:var(--bg3);color:var(--text2);border:1px solid var(--border2)}
+.btn-full{width:100%;padding:13px;border:none;border-radius:var(--rsm);font-size:13px;font-weight:700;cursor:pointer;transition:all .1s}
+.btn-full:active{transform:scale(.98)}
+
+/* ── MODAL ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+.modal-bg.open{display:flex}
+.modal{background:var(--bg2);border-radius:var(--r);padding:24px;width:100%;max-width:420px;border:1px solid var(--border2)}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px;line-height:1.4}
+.modal-close{float:right;background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;line-height:1;margin-top:-2px}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(12px);background:var(--bg3);color:var(--text);padding:10px 20px;border-radius:24px;font-size:12px;font-weight:600;opacity:0;transition:opacity .22s,transform .22s;pointer-events:none;z-index:200;border:1px solid var(--border3);white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── LEGEND ── */
+.legend{display:flex;gap:14px;margin-bottom:12px}
+.leg{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3);font-weight:600}
+.leg-sq{width:11px;height:11px;border-radius:3px}
+
+/* ── MOBILE OVERRIDES ── */
+@media(max-width:640px){
+  .sidebar{display:none}
+  .main{height:100vh}
+  .topbar{padding:14px 16px 0;flex-direction:column;gap:10px}
+  .score-widget{width:100%}
+  .score-right{min-width:0;flex:1}
+  .scroll{padding:12px 16px 80px}
+  .page-title{font-size:18px}
+  .card,.card-sm{padding:14px}
+  .mobile-tabs{display:flex !important}
+  .grid-2,.grid-3{grid-template-columns:1fr}
+  .habit-name-cell{max-width:130px}
+}
+.mobile-tabs{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:8px 4px calc(8px + env(safe-area-inset-bottom));z-index:20;gap:2px}
+.mtab{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:var(--rsm);cursor:pointer;border:none;background:none;transition:background .15s}
+.mtab.active{background:rgba(29,158,117,.1)}
+.mtab-icon{font-size:18px}
+.mtab-label{font-size:9px;font-weight:700;color:var(--text3);letter-spacing:.04em;text-transform:uppercase}
+.mtab.active .mtab-label{color:var(--green)}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">🌿</div>
+    <div class="logo-name">Recovery Plan</div>
+    <div class="logo-sub">Barcelona · Mid-20s</div>
+    <div class="sync-row"><div class="sync-dot" id="syncDot"></div><span class="sync-label" id="syncLabel">Not synced</span></div>
+  </div>
+  <div class="nav" id="sideNav"></div>
+  <div class="sidebar-footer">
+    <div class="week-ctrl">
+      <button class="wk-btn" onclick="changeWeek(-1)">&#8592;</button>
+      <div class="wk-info">
+        <div class="wk-label" id="wkLabel">This week</div>
+        <div class="wk-dates" id="wkDates"></div>
+      </div>
+      <button class="wk-btn" onclick="changeWeek(1)">&#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="page-title" id="pageTitle">Tracker</div>
+      <div class="page-sub" id="pageSub"></div>
+    </div>
+    <div class="score-widget">
+      <div class="score-big" id="sNum">0</div>
+      <div class="score-of" id="sDen">/ 0</div>
+      <div class="score-right">
+        <div class="score-lbl">weekly score</div>
+        <div class="prog-track"><div class="prog-fill" id="sProg" style="width:0%"></div></div>
+        <div class="pillar-bars" id="pBars"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll" id="scroll">
+
+    <!-- TRACKER -->
+    <div id="tab-tracker">
+      <div class="legend">
+        <div class="leg"><div class="leg-sq" style="background:var(--green)"></div>Done</div>
+        <div class="leg"><div class="leg-sq" style="background:var(--bg3);border:1px solid var(--border2);opacity:.5"></div>Skipped</div>
+        <div class="leg"><div class="leg-sq" style="border:1px solid var(--border2)"></div>Pending</div>
+      </div>
+      <div id="pillars"></div>
+    </div>
+
+    <!-- JOURNAL -->
+    <div id="tab-journal" style="display:none">
+      <div class="quote-card">
+        <div class="qmark">"</div>
+        <div class="qtext" id="quoteText"></div>
+        <div class="qsrc" id="quoteSrc"></div>
+        <button class="reflect-btn" onclick="focusReflection()">Reflect on this ↓</button>
+      </div>
+      <div class="card">
+        <div class="section-label">Daily journal</div>
+        <div class="day-chips" id="dayPicker"></div>
+        <div class="field-group">
+          <span class="field-label">How was today?</span>
+          <textarea id="j-day" rows="3" placeholder="Energy, mood, mindset..."></textarea>
+        </div>
+        <div class="field-group">
+          <span class="field-label">Reflection on today's quote</span>
+          <textarea id="j-quote" rows="2" placeholder="What does this mean to you right now?"></textarea>
+        </div>
+        <div class="field-group">
+          <span class="field-label">Missed habits — why?</span>
+          <div class="missed-list" id="missedList"></div>
+          <textarea id="j-missed" rows="2" placeholder="Anything that got in the way..."></textarea>
+        </div>
+        <div class="field-group">
+          <span class="field-label">Tomorrow's intention</span>
+          <textarea id="j-intention" rows="2" placeholder="One thing you commit to tomorrow..."></textarea>
+        </div>
+        <button class="btn-full btn-primary" onclick="saveJournal()">Save entry</button>
+      </div>
+    </div>
+
+    <!-- REVIEW -->
+    <div id="tab-review" style="display:none">
+      <div class="card">
+        <div class="section-label">Sunday review</div>
+        <div class="big-score" id="reviewScore">—</div>
+        <div class="big-rating" id="reviewRating"></div>
+        <div class="field-group"><span class="field-label">What went well this week?</span><textarea id="r1" rows="2" placeholder="Your biggest win..."></textarea></div>
+        <div class="field-group"><span class="field-label">What fought me hardest?</span><textarea id="r2" rows="2" placeholder="Main obstacle..."></textarea></div>
+        <div class="field-group"><span class="field-label">Weed — how many days?</span><textarea id="r3" rows="1" placeholder="Be honest with yourself..."></textarea></div>
+        <div class="field-group"><span class="field-label">One upgrade for next week</span><textarea id="r4" rows="2" placeholder="One specific thing to improve..."></textarea></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="saveReview()">Save review</button>
+          <button class="btn btn-secondary" onclick="exportWeek()">Export week ↓</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DRIVE -->
+    <div id="tab-drive" style="display:none">
+      <div class="card">
+        <div class="section-label">Google Drive sync</div>
+        <div class="drive-row"><span class="drive-key">Status</span><span class="drive-val" id="driveStatus">Not connected</span></div>
+        <div class="drive-row"><span class="drive-key">Folder</span><span class="drive-val on" id="driveFolderName">—</span></div>
+        <div class="drive-row"><span class="drive-key">Last sync</span><span class="drive-val" id="driveLastSync">Never</span></div>
+      </div>
+      <div class="btn-row" style="margin-bottom:8px">
+        <button class="btn btn-primary" onclick="connectDrive()">Connect Google Drive</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-secondary" onclick="syncNow()">Sync now</button>
+        <button class="btn btn-secondary" onclick="exportAll()">Export all data</button>
+      </div>
+      <div class="info-box">Your data is saved as a JSON file inside a <strong>Recovery Plan</strong> folder on Google Drive — auto-syncing every time you save a journal or review entry. To activate, create a free OAuth client ID at <strong>console.cloud.google.com</strong> and replace <strong>YOUR_GOOGLE_CLIENT_ID</strong> in the source code.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MOBILE TABS -->
+<div class="mobile-tabs" id="mobileTabs"></div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="missedModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+    <div class="modal-title" id="modalTitle">Why did you miss this?</div>
+    <textarea id="modalNote" rows="4" placeholder="Be honest — no judgment here..."></textarea>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-primary" onclick="saveModalNote()">Save note</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const PILLARS=[
+  {id:'spirit',label:'Spirit',icon:'🤲',bg:'rgba(155,142,245,.15)',col:'var(--spirit)',hex:'#9b8ef5',habits:[
+    {id:'fajr',label:'Fajr on time + no phone 20 min'},
+    {id:'prayers',label:'All 5 prayers on time'},
+    {id:'quran',label:'10 min Quran'},
+    {id:'shukr',label:'3 things of gratitude'}
+  ]},
+  {id:'body',label:'Body',icon:'🏃',bg:'rgba(29,158,117,.15)',col:'var(--body-c)',hex:'#1D9E75',habits:[
+    {id:'workout',label:'Workout (gym / run / bike)'},
+    {id:'walk',label:'20 min outdoor movement'},
+    {id:'sleep',label:'Lights out before 00:30'}
+  ]},
+  {id:'fuel',label:'Fuel',icon:'🍽️',bg:'rgba(232,161,58,.15)',col:'var(--fuel)',hex:'#e8a13a',habits:[
+    {id:'meals',label:'2 real meals today'},
+    {id:'protein',label:'Protein in every meal'},
+    {id:'weed',label:'No weed before 21:00'}
+  ]},
+  {id:'mind',label:'Mind',icon:'🧠',bg:'rgba(91,163,224,.15)',col:'var(--mind)',hex:'#5ba3e0',habits:[
+    {id:'ritual',label:'Transition ritual done'},
+    {id:'nophone',label:'Phone outside bedroom'},
+    {id:'learn',label:'15 min reading / learning'}
+  ]}
+];
+
+const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DS=['M','T','W','T','F','S','S'];
+const TABS=[
+  {id:'tracker',label:'Tracker',icon:'☑️',title:'Tracker',sub:'Tap to log your habits'},
+  {id:'journal',label:'Journal',icon:'📓',title:'Journal',sub:'Daily reflection & intentions'},
+  {id:'review',label:'Review',icon:'📊',title:'Sunday Review',sub:'Weekly score & reflection'},
+  {id:'drive',label:'Drive',icon:'☁️',title:'Google Drive',sub:'Sync & export your data'},
+];
+
+const QUOTES=[
+  {text:"Indeed, with hardship comes ease.",src:"Quran 94:5"},
+  {text:"Take care of Allah's commands and He will take care of you.",src:"Prophet Muhammad ﷺ"},
+  {text:"The strongest person is not the one who overcomes others. The strongest is the one who controls himself in anger.",src:"Prophet Muhammad ﷺ"},
+  {text:"Do not lose hope, nor be sad.",src:"Quran 3:139"},
+  {text:"Verily, Allah does not look at your appearance or wealth, but rather He looks at your hearts and actions.",src:"Prophet Muhammad ﷺ"},
+  {text:"And He found you lost and guided you.",src:"Quran 93:7"},
+  {text:"Whoever takes a path in search of knowledge, Allah will make easy for him a path to Paradise.",src:"Prophet Muhammad ﷺ"},
+  {text:"So be patient with gracious patience.",src:"Quran 70:5"},
+  {text:"Small deeds done consistently are more beloved to Allah than great deeds done inconsistently.",src:"Prophet Muhammad ﷺ"},
+  {text:"Allah does not burden a soul beyond that it can bear.",src:"Quran 2:286"},
+  {text:"And whoever relies upon Allah — then He is sufficient for him.",src:"Quran 65:3"},
+  {text:"Make things easy and do not make them difficult.",src:"Prophet Muhammad ﷺ"},
+  {text:"Call upon Me; I will respond to you.",src:"Quran 40:60"},
+  {text:"Be in this world as if you were a stranger or a traveller.",src:"Prophet Muhammad ﷺ"},
+  {text:"It may be that you dislike a thing which is good for you.",src:"Quran 2:216"},
+  {text:"The best of you are those with the best character.",src:"Prophet Muhammad ﷺ"},
+  {text:"Your Lord has not forsaken you, nor has He become displeased.",src:"Quran 93:3"},
+  {text:"When My servants ask about Me, I am near.",src:"Quran 2:186"},
+  {text:"Seek help through patience and prayer.",src:"Quran 2:45"},
+  {text:"Verily, actions are by intentions.",src:"Prophet Muhammad ﷺ"},
+  {text:"Speak good or remain silent.",src:"Prophet Muhammad ﷺ"},
+  {text:"Renew your faith by saying La ilaha illa Allah.",src:"Prophet Muhammad ﷺ"},
+  {text:"Righteousness is what the soul feels at peace with.",src:"Prophet Muhammad ﷺ"},
+  {text:"Guard yourselves against the fire, even by giving half a date in charity.",src:"Prophet Muhammad ﷺ"},
+  {text:"He who is not grateful to people is not grateful to Allah.",src:"Prophet Muhammad ﷺ"},
+  {text:"The cure for ignorance is to ask.",src:"Prophet Muhammad ﷺ"},
+  {text:"Every day the sun rises, charity is due from every joint of a person.",src:"Prophet Muhammad ﷺ"},
+  {text:"Verily, the remembrance of Allah is the greatest.",src:"Quran 29:45"}
+];
+
+let cw=0,activeDay=0,currentTab='tracker',modalHabitKey=null,driveToken=null;
+let store={};
+try{store=JSON.parse(localStorage.getItem('rp_v5')||'{}');}catch(e){}
+const save=()=>{try{localStorage.setItem('rp_v5',JSON.stringify(store));}catch(e){}};
+const ck=(w,p,h,d)=>`${w}|${p}|${h}|${d}`;
+const getS=(w,p,h,d)=>store[ck(w,p,h,d)]||'empty';
+const folderId=()=>store['gdrive_folder']||null;
+
+function getWeekStart(off){
+  const n=new Date(),dow=n.getDay(),diff=dow===0?-6:1-dow,m=new Date(n);
+  m.setDate(n.getDate()+diff+off*7);return m;
+}
+function getTodayCol(off){
+  const n=new Date(),ws=getWeekStart(off),d=Math.round((n-ws)/86400000);
+  return(d>=0&&d<7)?d:-1;
+}
+function fmt(d){return d.getDate()+'/'+(d.getMonth()+1);}
+function weekKey(w){return getWeekStart(w).toISOString().slice(0,10);}
+function getQuote(){
+  const d=new Date();
+  return QUOTES[(d.getFullYear()*366+d.getMonth()*31+d.getDate())%QUOTES.length];
+}
+function score(w){
+  let done=0,total=0;
+  PILLARS.forEach(p=>p.habits.forEach(h=>{
+    for(let d=0;d<7;d++){const s=getS(w,p.id,h.id,d);if(s==='done')done++;if(s!=='skip')total++;}
+  }));
+  return{done,total};
+}
+function pillarScore(w,p){
+  let done=0,total=0;
+  p.habits.forEach(h=>{for(let d=0;d<7;d++){const s=getS(w,p.id,h.id,d);if(s==='done')done++;if(s!=='skip')total++;}});
+  return{done,total};
+}
+function getRating(done,total){
+  if(!total)return'';
+  const pct=done/total;
+  if(pct>=.9)return'Excellent week 🔥';
+  if(pct>=.7)return'Strong week ✓';
+  if(pct>=.5)return'Good effort — keep going';
+  if(pct>=.3)return'Hard week — the return matters';
+  return'Just begin again';
+}
+function changeWeek(dir){cw+=dir;render();}
+
+function cycle(w,p,h,d){
+  const k=ck(w,p,h,d),cur=store[k]||'empty';
+  store[k]=cur==='empty'?'done':cur==='done'?'skip':'empty';
+  save();render();
+  if(currentTab==='journal')renderMissedList();
+}
+
+function buildNav(){
+  const nav=document.getElementById('sideNav');
+  nav.innerHTML=TABS.map(t=>`
+    <button class="nav-item${t.id===currentTab?' active':''}" onclick="switchTab('${t.id}')">
+      <div class="nav-icon" style="background:${t.id==='tracker'?'rgba(29,158,117,.15)':t.id==='journal'?'rgba(155,142,245,.15)':t.id==='review'?'rgba(232,161,58,.15)':'rgba(91,163,224,.15)'}">${t.icon}</div>
+      <span class="nav-text">${t.label}</span>
+      ${t.id==='tracker'?`<span class="nav-score" id="navScore"></span>`:''}
+    </button>`).join('');
+
+  const mt=document.getElementById('mobileTabs');
+  mt.innerHTML=TABS.map(t=>`
+    <button class="mtab${t.id===currentTab?' active':''}" onclick="switchTab('${t.id}')">
+      <span class="mtab-icon">${t.icon}</span>
+      <span class="mtab-label">${t.label}</span>
+    </button>`).join('');
+}
+
+function switchTab(t){
+  currentTab=t;
+  TABS.forEach(tab=>{
+    document.getElementById('tab-'+tab.id).style.display=tab.id===t?'block':'none';
+  });
+  buildNav();
+  const info=TABS.find(x=>x.id===t);
+  document.getElementById('pageTitle').textContent=info.title;
+  document.getElementById('pageSub').textContent=info.sub;
+  document.getElementById('scroll').scrollTop=0;
+  if(t==='journal')renderJournal();
+  if(t==='review')renderReview();
+  if(t==='drive')renderDrive();
+}
+
+function renderTracker(){
+  const tc=getTodayCol(cw),c=document.getElementById('pillars');
+  c.innerHTML='';
+  PILLARS.forEach(p=>{
+    const{done:pd,total:pt}=pillarScore(cw,p);
+    const wrap=document.createElement('div');wrap.className='card';wrap.style.marginBottom='12px';
+    let html=`<div class="card-head">
+      <div class="card-icon" style="background:${p.bg}">${p.icon}</div>
+      <div class="card-title" style="color:${p.col}">${p.label}</div>
+      <div class="card-score">${pd}/${pt}</div>
+    </div>
+    <div class="tracker-wrap"><table class="tracker-table">
+      <thead><tr><th class="habit-h"></th>${DS.map((d,i)=>`<th class="${i===tc?'today-h':''}">${d}</th>`).join('')}</tr></thead>
+      <tbody>`;
+    p.habits.forEach(h=>{
+      html+=`<tr><td class="habit-td"><div class="habit-name-cell" title="${h.label}">${h.label}</div></td>`;
+      DS.forEach((_,i)=>{
+        const s=getS(cw,p.id,h.id,i);
+        const cls=['cell',s,i===tc?'today-col':''].filter(Boolean).join(' ');
+        html+=`<td><div class="${cls}" onclick="cycle(${cw},'${p.id}','${h.id}',${i})" tabindex="0">${s==='done'?'✓':s==='skip'?'–':''}</div></td>`;
+      });
+      html+='</tr>';
+    });
+    html+='</tbody></table></div>';
+    wrap.innerHTML=html;c.appendChild(wrap);
+  });
+}
+
+function renderJournal(){
+  const q=getQuote();
+  document.getElementById('quoteText').textContent=q.text;
+  document.getElementById('quoteSrc').textContent='— '+q.src;
+  document.getElementById('dayPicker').innerHTML=DAYS.map((d,i)=>`<div class="day-chip${i===activeDay?' active':''}" onclick="setDay(${i})">${d}</div>`).join('');
+  loadJournalDay();renderMissedList();
+}
+function setDay(i){saveJournalSilent();activeDay=i;renderJournal();}
+function jKey(){return'journal_'+weekKey(cw)+'_d'+activeDay;}
+function loadJournalDay(){
+  const d=store[jKey()]||{};
+  document.getElementById('j-day').value=d.day||'';
+  document.getElementById('j-quote').value=d.quote||'';
+  document.getElementById('j-missed').value=d.missed||'';
+  document.getElementById('j-intention').value=d.intention||'';
+}
+function saveJournalSilent(){
+  store[jKey()]={day:document.getElementById('j-day').value,quote:document.getElementById('j-quote').value,missed:document.getElementById('j-missed').value,intention:document.getElementById('j-intention').value,savedAt:new Date().toISOString()};
+  save();
+}
+function saveJournal(){saveJournalSilent();showToast('Journal saved');autoSync();}
+function focusReflection(){
+  switchTab('journal');
+  setTimeout(()=>{document.getElementById('j-quote').scrollIntoView({behavior:'smooth',block:'center'});document.getElementById('j-quote').focus();},200);
+}
+function renderMissedList(){
+  const tc=getTodayCol(cw),el=document.getElementById('missedList'),missed=[];
+  PILLARS.forEach(p=>p.habits.forEach(h=>{
+    if(getS(cw,p.id,h.id,activeDay)==='empty'&&activeDay<=tc){
+      const nk='mn_'+weekKey(cw)+'_d'+activeDay+'_'+p.id+'_'+h.id;
+      missed.push({p,h,nk,note:store[nk]||''});
+    }
+  }));
+  el.innerHTML=!missed.length
+    ?'<div style="font-size:11px;color:var(--text3);padding:2px 0">No missed habits for this day</div>'
+    :missed.map(m=>`<div class="missed-item"><div class="missed-dot" style="background:${m.p.hex}"></div><div class="missed-label">${m.h.label}</div><button class="missed-note-btn" onclick="openModal('${m.nk}','${m.h.label}')">${m.note?'edit':'+ note'}</button></div>`).join('');
+}
+function openModal(nk,label){
+  modalHabitKey=nk;
+  document.getElementById('modalTitle').textContent='Why did you miss: '+label;
+  document.getElementById('modalNote').value=store[nk]||'';
+  document.getElementById('missedModal').classList.add('open');
+  setTimeout(()=>document.getElementById('modalNote').focus(),100);
+}
+function closeModal(){document.getElementById('missedModal').classList.remove('open');}
+function saveModalNote(){
+  if(modalHabitKey){store[modalHabitKey]=document.getElementById('modalNote').value;save();}
+  closeModal();renderMissedList();showToast('Note saved');
+}
+function renderReview(){
+  const{done,total}=score(cw);
+  document.getElementById('reviewScore').textContent=done+' / '+total;
+  document.getElementById('reviewRating').textContent=getRating(done,total);
+  const r=store['review_'+weekKey(cw)]||{};
+  ['r1','r2','r3','r4'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=r[id]||'';});
+}
+function saveReview(){
+  store['review_'+weekKey(cw)]={r1:document.getElementById('r1').value,r2:document.getElementById('r2').value,r3:document.getElementById('r3').value,r4:document.getElementById('r4').value,savedAt:new Date().toISOString()};
+  save();showToast('Review saved');autoSync();
+}
+function exportWeek(){
+  const wk=weekKey(cw),{done,total}=score(cw),rev=store['review_'+wk]||{};
+  let t=`RECOVERY PLAN — Week of ${wk}\nScore: ${done}/${total} — ${getRating(done,total)}\n\n--- TRACKER ---\n`;
+  PILLARS.forEach(p=>{t+=`\n${p.label.toUpperCase()}\n`;p.habits.forEach(h=>{const row=DAYS.map((_,i)=>{const s=getS(cw,p.id,h.id,i);return s==='done'?'✓':s==='skip'?'–':'○';}).join(' ');t+=`  ${h.label}: ${row}\n`;});});
+  t+=`\n--- JOURNAL ---\n`;
+  for(let d=0;d<7;d++){const j=store['journal_'+wk+'_d'+d];if(j&&(j.day||j.intention)){t+=`\n${DAYS[d]}:\n`;if(j.day)t+=`  Today: ${j.day}\n`;if(j.quote)t+=`  Quote reflection: ${j.quote}\n`;if(j.missed)t+=`  Missed: ${j.missed}\n`;if(j.intention)t+=`  Tomorrow: ${j.intention}\n`;}}
+  if(rev.r1){t+=`\n--- SUNDAY REVIEW ---\nWin: ${rev.r1}\nObstacle: ${rev.r2||'—'}\nWeed days: ${rev.r3||'—'}\nNext week: ${rev.r4||'—'}\n`;}
+  dl(t,`recovery-${wk}.txt`);
+}
+function exportAll(){dl(JSON.stringify(store,null,2),'recovery-all.json');showToast('All data exported');}
+function dl(txt,name){const a=document.createElement('a');a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(txt);a.download=name;a.click();}
+
+function renderDrive(){
+  document.getElementById('driveStatus').textContent=driveToken?'Connected':'Not connected';
+  document.getElementById('driveStatus').className='drive-val'+(driveToken?' on':'');
+  document.getElementById('driveFolderName').textContent=folderId()?'Recovery Plan':'—';
+  const ls=store['gdrive_lastsync'];
+  document.getElementById('driveLastSync').textContent=ls?new Date(ls).toLocaleString():'Never';
+}
+function connectDrive(){
+  showToast('Replace YOUR_GOOGLE_CLIENT_ID to activate Drive sync');
+  const sc='https://www.googleapis.com/auth/drive.file',rd=encodeURIComponent(location.href.split('?')[0]);
+  window.open(`https://accounts.google.com/o/oauth2/v2/auth?client_id=YOUR_GOOGLE_CLIENT_ID&redirect_uri=${rd}&response_type=token&scope=${sc}`,'_blank','width=500,height=600');
+}
+async function syncNow(){
+  if(!driveToken){showToast('Connect Google Drive first');return;}
+  setSyncState('syncing');
+  try{
+    let fid=folderId();
+    if(!fid){
+      const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=name='Recovery Plan' and mimeType='application/vnd.google-apps.folder' and trashed=false`,{headers:{Authorization:'Bearer '+driveToken}});
+      const d=await r.json();
+      if(d.files&&d.files.length){fid=d.files[0].id;}
+      else{const cr=await fetch('https://www.googleapis.com/drive/v3/files',{method:'POST',headers:{Authorization:'Bearer '+driveToken,'Content-Type':'application/json'},body:JSON.stringify({name:'Recovery Plan',mimeType:'application/vnd.google-apps.folder'})});fid=(await cr.json()).id;}
+      store['gdrive_folder']=fid;
+    }
+    const fn='tracker-data.json',content=JSON.stringify(store,null,2);
+    const r2=await fetch(`https://www.googleapis.com/drive/v3/files?q=name='${fn}' and '${fid}' in parents and trashed=false`,{headers:{Authorization:'Bearer '+driveToken}});
+    const d2=await r2.json();const eid=d2.files&&d2.files.length?d2.files[0].id:null;
+    const meta={name:fn,parents:eid?undefined:[fid]};
+    const form=new FormData();
+    form.append('metadata',new Blob([JSON.stringify(meta)],{type:'application/json'}));
+    form.append('file',new Blob([content],{type:'application/json'}));
+    await fetch(eid?`https://www.googleapis.com/upload/drive/v3/files/${eid}?uploadType=multipart`:`https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`,{method:eid?'PATCH':'POST',headers:{Authorization:'Bearer '+driveToken},body:form});
+    store['gdrive_lastsync']=new Date().toISOString();save();setSyncState('synced');showToast('Synced to Drive');renderDrive();
+  }catch(e){setSyncState('');showToast('Sync failed');}
+}
+function autoSync(){if(driveToken)syncNow();}
+function setSyncState(s){
+  const d=document.getElementById('syncDot'),l=document.getElementById('syncLabel');
+  d.className='sync-dot'+(s?' '+s:'');
+  l.textContent=s==='synced'?'Synced':s==='syncing'?'Syncing...':'Not synced';
+}
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+function render(){
+  const ws=getWeekStart(cw),we=new Date(ws);we.setDate(ws.getDate()+6);
+  document.getElementById('wkLabel').textContent=cw===0?'This week':cw>0?'+'+cw+' wk':cw+' wk';
+  document.getElementById('wkDates').textContent=fmt(ws)+' — '+fmt(we);
+  const{done,total}=score(cw);
+  document.getElementById('sNum').textContent=done;
+  document.getElementById('sDen').textContent='/ '+total;
+  document.getElementById('sProg').style.width=total?Math.round(done/total*100)+'%':'0%';
+  document.getElementById('pBars').innerHTML=PILLARS.map(p=>{
+    const{done:d,total:t}=pillarScore(cw,p);const pct=t?Math.round(d/t*100):0;
+    return`<div class="pb"><div class="pb-fill" style="width:${pct}%;background:${p.hex}"></div></div>`;
+  }).join('');
+  const ns=document.getElementById('navScore');
+  if(ns)ns.textContent=done+'/'+total;
+  if(currentTab==='tracker')renderTracker();
+  if(currentTab==='journal')renderJournal();
+  if(currentTab==='review')renderReview();
+}
+
+const hash=window.location.hash;
+if(hash.includes('access_token')){
+  const p=new URLSearchParams(hash.replace('#',''));
+  driveToken=p.get('access_token');
+  setSyncState('synced');showToast('Google Drive connected');
+  window.history.replaceState(null,'',location.pathname);
+}
+
+buildNav();
+document.getElementById('pageTitle').textContent='Tracker';
+document.getElementById('pageSub').textContent='Tap to log your habits';
+activeDay=Math.max(0,getTodayCol(0));
+render();
+</script>
+</body>
+</html>
